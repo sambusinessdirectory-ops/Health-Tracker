@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    />
+    <meta
+      name="description"
+      content="A simple private health tracker for weight, water, exercise, food, groceries, meal prep and calories."
+    />
+    <meta name="theme-color" content="#eaf4ff" />
+    <title>My Health Journey</title>
+    <link rel="stylesheet" href="./app.css" />
+    <script defer src="./supabase-config.js"></script>
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to tracker</a>
+
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <main id="main-content" class="app-shell">
+      <section id="dashboard-view" aria-labelledby="page-title">
+        <header class="hero-panel">
+          <div class="hero-copy">
+            <p class="eyebrow">PRIVATE HEALTH LOG</p>
+            <h1 id="page-title">My Health Journey</h1>
+            <p class="hero-lead">Small records. Clear choices. Steady progress.</p>
+          </div>
+
+          <div class="hero-actions" aria-label="Tracker controls">
+            <div class="unit-control" aria-label="Weight unit">
+              <span>Weight unit</span>
+              <div class="segmented-control" role="group" aria-label="Choose weight unit">
+                <button type="button" class="unit-button is-active" data-unit="lb">lb</button>
+                <button type="button" class="unit-button" data-unit="kg">kg</button>
+              </div>
+            </div>
+            <button type="button" id="cloud-button" class="soft-button">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="cloud-button-label">This browser</span>
+            </button>
+            <button type="button" id="export-all-button" class="primary-button">
+              Export all PDF
+            </button>
+          </div>
+        </header>
+
+        <section class="summary-strip" aria-labelledby="today-title">
+          <div class="summary-heading">
+            <p class="eyebrow">TODAY</p>
+            <h2 id="today-title">Your daily glance</h2>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Latest weight</span>
+            <strong id="summary-weight">—</strong>
+            <span id="summary-weight-note" class="summary-note">No entry yet</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Water</span>
+            <strong id="summary-water">0 L</strong>
+            <span id="summary-water-note" class="summary-note">of 2 L</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Activity</span>
+            <strong id="summary-activity">0 min</strong>
+            <span class="summary-note">cardio today</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Food calories</span>
+            <strong id="summary-calories">0 kcal</strong>
+            <span id="summary-calories-note" class="summary-note">of 2,000 kcal</span>
+          </div>
+        </section>
+
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">YOUR TRACKERS</p>
+            <h2>What would you like to record?</h2>
+          </div>
+          <p>Choose a block to add, edit or review your entries.</p>
+        </div>
+
+        <section id="tracker-grid" class="tracker-grid" aria-label="Health trackers"></section>
+
+        <aside class="privacy-note">
+          <span class="privacy-icon" aria-hidden="true">●</span>
+          <div>
+            <strong id="storage-heading">Saved on this browser</strong>
+            <p id="storage-copy">
+              Your records stay on this device unless you connect your private Supabase account.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      <section id="category-view" class="category-view" hidden aria-labelledby="category-title">
+        <nav class="category-nav" aria-label="Category navigation">
+          <button type="button" id="back-button" class="back-button">← All trackers</button>
+          <div class="category-nav-actions">
+            <div
+              class="segmented-control compact"
+              role="group"
+              aria-label="Choose weight unit"
+            >
+              <button type="button" class="unit-button is-active" data-unit="lb">lb</button>
+              <button type="button" class="unit-button" data-unit="kg">kg</button>
+            </div>
+            <button type="button" id="category-export-button" class="soft-button">
+              Export PDF
+            </button>
+          </div>
+        </nav>
+
+        <header class="category-header">
+          <span id="category-icon" class="category-icon" aria-hidden="true"></span>
+          <div>
+            <p id="category-kicker" class="eyebrow">TRACKER</p>
+            <h1 id="category-title" tabindex="-1"></h1>
+            <p id="category-description"></p>
+          </div>
+        </header>
+
+        <section class="entry-panel" aria-labelledby="entry-form-title">
+          <div class="entry-panel-heading">
+            <div>
+              <p class="eyebrow">QUICK ENTRY</p>
+              <h2 id="entry-form-title">Add an entry</h2>
+            </div>
+            <button type="button" id="fill-calories-button" class="soft-button" hidden>
+              Fill from food &amp; exercise logs
+            </button>
+          </div>
+
+          <form id="entry-form" novalidate>
+            <div id="form-fields" class="form-grid"></div>
+            <div id="form-error" class="form-error" role="alert" hidden></div>
+            <div class="form-actions">
+              <button type="submit" id="save-entry-button" class="primary-button">Save entry</button>
+              <button type="button" id="cancel-edit-button" class="text-button" hidden>
+                Cancel edit
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="records-panel" aria-labelledby="records-title">
+          <div class="records-heading">
+            <div>
+              <p class="eyebrow">HISTORY</p>
+              <h2 id="records-title">Your records</h2>
+            </div>
+            <span id="record-count" class="record-count" tabindex="-1">0 entries</span>
+          </div>
+          <div id="table-wrap" class="table-wrap"></div>
+        </section>
+      </section>
+    </main>
+
+    <dialog
+      id="cloud-dialog"
+      class="cloud-dialog"
+      aria-labelledby="cloud-dialog-title"
+      aria-describedby="cloud-dialog-copy"
+    >
+      <form method="dialog" class="dialog-close-form">
+        <button class="dialog-close" aria-label="Close cloud sign-in">×</button>
+      </form>
+      <div class="dialog-mark" aria-hidden="true">☁</div>
+      <p class="eyebrow">PRIVATE CLOUD SYNC</p>
+      <h2 id="cloud-dialog-title">Connect your account</h2>
+      <p id="cloud-dialog-copy" class="dialog-copy">
+        Sign in to keep the same records on your phone and computer. Your local entries will be
+        merged into your private account.
+      </p>
+
+      <form id="cloud-signin-form" class="signin-form">
+        <label>
+          <span>Email</span>
+          <input id="cloud-email" name="email" type="email" autocomplete="username" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input
+            id="cloud-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            minlength="6"
+            required
+          />
+        </label>
+        <div id="cloud-error" class="form-error" role="alert" hidden></div>
+        <button type="submit" id="cloud-signin-button" class="primary-button">Sign in</button>
+      </form>
+
+      <div id="cloud-account" class="cloud-account" hidden>
+        <span>Signed in as</span>
+        <strong id="cloud-account-email"></strong>
+        <button type="button" id="sync-now-button" class="soft-button">Sync now</button>
+        <button type="button" id="signout-button" class="text-button danger">Sign out</button>
+      </div>
+
+      <p id="cloud-setup-note" class="setup-note" hidden>
+        Cloud sync needs the Supabase setup included with this app. Browser-only saving still works.
+      </p>
+    </dialog>
+
+    <section id="print-report" class="print-report" hidden aria-label="Printable health report"></section>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
