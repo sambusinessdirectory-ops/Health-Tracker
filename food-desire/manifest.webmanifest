@@ -1,0 +1,35 @@
+{
+  "id": "/Health-Tracker/food-desire/",
+  "name": "Food Desire Tracker",
+  "short_name": "Food Desire",
+  "description": "Record hunger moments, emotions and the food you want in a focused mini app.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fff7e7",
+  "theme_color": "#fff1d8",
+  "categories": ["health", "lifestyle", "food"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./icons/desire-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/desire-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/desire-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
