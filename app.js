@@ -1948,7 +1948,10 @@
       elements.cloudPassword.value = "";
       await syncAllRecords(true);
     } catch (error) {
-      elements.cloudError.textContent = error.message || t("cloud.signinFailed");
+      const localizedErrors = new Set([t("cloud.ownerOnly"), t("cloud.cacheFailed")]);
+      elements.cloudError.textContent = localizedErrors.has(error.message)
+        ? error.message
+        : t("cloud.signinFailed");
       elements.cloudError.hidden = false;
     } finally {
       elements.cloudSigninButton.disabled = false;
@@ -1978,7 +1981,8 @@
       showToast(t(preserveRecoveryCopy ? "cloud.signedOutRecovery" : "cloud.signedOut"));
       elements.cloudDialog.close();
     } catch (error) {
-      showToast(error.message || t("cloud.signinFailed"));
+      console.warn("Cloud sign-out failed.", error);
+      showToast(t("cloud.signoutFailed"));
     } finally {
       elements.signoutButton.disabled = false;
     }

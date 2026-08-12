@@ -313,6 +313,7 @@
       "cloud.signingIn": "Signing in…",
       "cloud.ownerOnly": "This account is not allowed to use the private tracker.",
       "cloud.signinFailed": "Sign-in failed. Check your details.",
+      "cloud.signoutFailed": "Sign-out failed. Please try again.",
       "cloud.cacheFailed": "This device could not create the private account cache.",
       "cloud.import":
         "Import the health records currently saved on this browser into this private account?",
@@ -661,6 +662,7 @@
       "cloud.signingIn": "登入中…",
       "cloud.ownerOnly": "此帳戶沒有權限使用私人追蹤器。",
       "cloud.signinFailed": "登入失敗，請檢查資料。",
+      "cloud.signoutFailed": "登出失敗，請再試一次。",
       "cloud.cacheFailed": "此裝置無法建立私人帳戶快取。",
       "cloud.import": "將目前儲存在此瀏覽器的健康紀錄匯入私人帳戶？",
       "cloud.syncComplete": "私人雲端同步完成。",
