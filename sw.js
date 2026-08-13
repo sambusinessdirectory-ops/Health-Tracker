@@ -1,8 +1,21 @@
-const CACHE_NAME = "health-tracker-shell-v2";
+importScripts("./pwa-catalog.js");
+
+const CACHE_NAME = "health-tracker-shell-v3";
 const APP_SCOPE = self.registration.scope;
 const scopeUrl = new URL(APP_SCOPE);
 const SCOPE_PATH = scopeUrl.pathname.endsWith("/") ? scopeUrl.pathname : `${scopeUrl.pathname}/`;
 const appUrl = (path = "") => new URL(path, APP_SCOPE).href;
+const STANDALONE_APPS = Array.isArray(self.HealthPwaCatalog) ? self.HealthPwaCatalog : [];
+
+const standaloneShell = STANDALONE_APPS.flatMap((entry) => [
+  appUrl(`${entry.slug}/`),
+  appUrl(`${entry.slug}/index.html`),
+  appUrl(`${entry.slug}/manifest.webmanifest`),
+  appUrl(`${entry.slug}/icons/${entry.slug}-192.png`),
+  appUrl(`${entry.slug}/icons/${entry.slug}-512.png`),
+  appUrl(`${entry.slug}/icons/${entry.slug}-maskable-512.png`),
+  appUrl(`${entry.slug}/icons/${entry.slug}-apple-touch-180.png`),
+]);
 
 const APP_SHELL = [
   appUrl(""),
@@ -11,6 +24,7 @@ const APP_SHELL = [
   appUrl("app.js"),
   appUrl("charts.js"),
   appUrl("i18n.js"),
+  appUrl("pwa-catalog.js"),
   appUrl("supabase-config.js"),
   appUrl("vendor/supabase.min.js"),
   appUrl("pwa-register.js"),
@@ -19,13 +33,7 @@ const APP_SHELL = [
   appUrl("icons/health-512.png"),
   appUrl("icons/health-maskable-512.png"),
   appUrl("icons/health-apple-touch-180.png"),
-  appUrl("food-desire/"),
-  appUrl("food-desire/index.html"),
-  appUrl("food-desire/manifest.webmanifest"),
-  appUrl("food-desire/icons/desire-192.png"),
-  appUrl("food-desire/icons/desire-512.png"),
-  appUrl("food-desire/icons/desire-maskable-512.png"),
-  appUrl("food-desire/icons/desire-apple-touch-180.png"),
+  ...standaloneShell,
 ];
 
 self.addEventListener("install", (event) => {
@@ -76,10 +84,14 @@ async function networkFirstNavigation(request, url) {
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch (error) {
-    const foodDesirePath = `${SCOPE_PATH}food-desire`;
-    const isFoodDesire =
-      url.pathname === foodDesirePath || url.pathname.startsWith(`${foodDesirePath}/`);
-    const fallback = await cache.match(appUrl(isFoodDesire ? "food-desire/index.html" : "index.html"));
+    const relativePath = url.pathname.startsWith(SCOPE_PATH)
+      ? url.pathname.slice(SCOPE_PATH.length).replace(/^\/+/, "")
+      : "";
+    const routeSlug = relativePath.split("/", 1)[0];
+    const standaloneApp = STANDALONE_APPS.find((entry) => entry.slug === routeSlug);
+    const fallback = await cache.match(
+      appUrl(standaloneApp ? `${standaloneApp.slug}/index.html` : "index.html"),
+    );
     if (fallback) return fallback;
     throw error;
   }

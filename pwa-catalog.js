@@ -1,0 +1,255 @@
+(() => {
+  "use strict";
+  const catalog = [
+  {
+    "key": "weight",
+    "slug": "weight",
+    "name": "Weight Record",
+    "shortName": "Weight",
+    "appleTitle": "Weight",
+    "description": "Record and review your private weight history in pounds or kilograms.",
+    "themeColor": "#2b7fd4",
+    "backgroundColor": "#fffaf0",
+    "gradientStart": "#fffaf0",
+    "gradientEnd": "#cfe8ff",
+    "iconLabel": "W",
+    "categories": [
+      "health",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "water",
+    "slug": "water",
+    "name": "Water Intake",
+    "shortName": "Water",
+    "appleTitle": "Water",
+    "description": "Record daily water intake and review your hydration progress.",
+    "themeColor": "#2391b4",
+    "backgroundColor": "#f1fbff",
+    "gradientStart": "#f1fbff",
+    "gradientEnd": "#bde7f4",
+    "iconLabel": "H2O",
+    "categories": [
+      "health",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "cardio",
+    "slug": "cardio",
+    "name": "Cardio Exercise",
+    "shortName": "Cardio",
+    "appleTitle": "Cardio",
+    "description": "Record cardio duration and your before-and-after exercise ratings.",
+    "themeColor": "#527ad0",
+    "backgroundColor": "#f3f8ff",
+    "gradientStart": "#f3f8ff",
+    "gradientEnd": "#c8dcff",
+    "iconLabel": "GO",
+    "categories": [
+      "health",
+      "fitness"
+    ]
+  },
+  {
+    "key": "strength",
+    "slug": "strength",
+    "name": "Weight Exercise",
+    "shortName": "Strength",
+    "appleTitle": "Strength",
+    "description": "Record strength exercises, sets, repetitions and exercise ratings.",
+    "themeColor": "#676fbd",
+    "backgroundColor": "#f3f6ff",
+    "gradientStart": "#f3f6ff",
+    "gradientEnd": "#d3d9fa",
+    "iconLabel": "KG",
+    "categories": [
+      "health",
+      "fitness"
+    ]
+  },
+  {
+    "key": "food",
+    "slug": "food",
+    "name": "Food Taken",
+    "shortName": "Food Log",
+    "appleTitle": "Food Log",
+    "description": "Record meals and calories and review daily meal totals.",
+    "themeColor": "#d88735",
+    "backgroundColor": "#fffaf0",
+    "gradientStart": "#fffaf0",
+    "gradientEnd": "#ffe0b9",
+    "iconLabel": "FOOD",
+    "categories": [
+      "health",
+      "food",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "groceries",
+    "slug": "groceries",
+    "name": "Grocery Shopping",
+    "shortName": "Groceries",
+    "appleTitle": "Groceries",
+    "description": "Keep your private grocery shopping list available on every device.",
+    "themeColor": "#489766",
+    "backgroundColor": "#f5fbf8",
+    "gradientStart": "#f5fbf8",
+    "gradientEnd": "#cfe9d9",
+    "iconLabel": "LIST",
+    "categories": [
+      "food",
+      "shopping",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "mealPrep",
+    "slug": "meal-prep",
+    "name": "Meal Prep",
+    "shortName": "Meal Prep",
+    "appleTitle": "Meal Prep",
+    "description": "Plan and track the meals you want to prepare.",
+    "themeColor": "#bd7b43",
+    "backgroundColor": "#fff9f1",
+    "gradientStart": "#fff9f1",
+    "gradientEnd": "#f2d8b8",
+    "iconLabel": "MEAL",
+    "categories": [
+      "food",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "calories",
+    "slug": "calories",
+    "name": "Calories Calculation",
+    "shortName": "Calories",
+    "appleTitle": "Calories",
+    "description": "Calculate daily calorie intake, activity and remaining balance.",
+    "themeColor": "#38799a",
+    "backgroundColor": "#f4f9ff",
+    "gradientStart": "#f4f9ff",
+    "gradientEnd": "#c9e1ef",
+    "iconLabel": "KCAL",
+    "categories": [
+      "health",
+      "food",
+      "fitness"
+    ]
+  },
+  {
+    "key": "progress",
+    "slug": "progress",
+    "name": "All Dashboard Progress",
+    "shortName": "Progress",
+    "appleTitle": "Progress",
+    "description": "View all weight, water, exercise, food and rating dashboards together.",
+    "themeColor": "#296cb5",
+    "backgroundColor": "#f0f8ff",
+    "gradientStart": "#f0f8ff",
+    "gradientEnd": "#c4e1ff",
+    "iconLabel": "CHART",
+    "categories": [
+      "health",
+      "fitness",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "foodDesire",
+    "slug": "food-desire",
+    "name": "Food Desire Tracker",
+    "shortName": "Food Desire",
+    "appleTitle": "Cravings",
+    "description": "Record hunger moments, emotions and the food you want.",
+    "themeColor": "#bb5474",
+    "backgroundColor": "#fff5f7",
+    "gradientStart": "#fff5f7",
+    "gradientEnd": "#ffd9e4",
+    "iconLabel": "WANT",
+    "categories": [
+      "health",
+      "food",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "foodPreference",
+    "slug": "food-preference",
+    "name": "My Food Preference",
+    "shortName": "Food Likes",
+    "appleTitle": "Food Likes",
+    "description": "Keep a private list of foods you enjoy eating.",
+    "themeColor": "#c96b3e",
+    "backgroundColor": "#fff8f2",
+    "gradientStart": "#fff8f2",
+    "gradientEnd": "#ffd9bf",
+    "iconLabel": "LIKE",
+    "categories": [
+      "food",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "foodCutGoal",
+    "slug": "food-cut-goal",
+    "name": "My Food Cut Goal",
+    "shortName": "Food Cut",
+    "appleTitle": "Food Cut",
+    "description": "Focus on the foods you want to reduce first.",
+    "themeColor": "#b9534b",
+    "backgroundColor": "#fff7f3",
+    "gradientStart": "#fff7f3",
+    "gradientEnd": "#ffcfc7",
+    "iconLabel": "CUT",
+    "categories": [
+      "health",
+      "food",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "sportPreference",
+    "slug": "sport-preference",
+    "name": "My Sport Preference",
+    "shortName": "Sports",
+    "appleTitle": "Sports",
+    "description": "Keep a private list of sports you enjoy doing.",
+    "themeColor": "#247b98",
+    "backgroundColor": "#f3fbff",
+    "gradientStart": "#f3fbff",
+    "gradientEnd": "#c8e9f4",
+    "iconLabel": "SPORT",
+    "categories": [
+      "health",
+      "fitness",
+      "lifestyle"
+    ]
+  },
+  {
+    "key": "sportFocusGoal",
+    "slug": "sport-focus-goal",
+    "name": "My Sport Focus Goal",
+    "shortName": "Sport Goal",
+    "appleTitle": "Sport Goal",
+    "description": "Focus on the sports habits you want to develop first.",
+    "themeColor": "#536fc0",
+    "backgroundColor": "#f4f8ff",
+    "gradientStart": "#f4f8ff",
+    "gradientEnd": "#d3ddff",
+    "iconLabel": "GOAL",
+    "categories": [
+      "health",
+      "fitness",
+      "lifestyle"
+    ]
+  }
+];
+  catalog.forEach(Object.freeze);
+  Object.freeze(catalog);
+  if (typeof window !== "undefined") window.HealthPwaCatalog = catalog;
+  if (typeof self !== "undefined") self.HealthPwaCatalog = catalog;
+})();

@@ -1,8 +1,8 @@
 {
-  "id": "/Health-Tracker/food-desire/",
-  "name": "Food Desire Tracker",
-  "short_name": "Food Desire",
-  "description": "Record hunger moments, emotions and the food you want.",
+  "id": "/Health-Tracker/weight/",
+  "name": "Weight Record",
+  "short_name": "Weight",
+  "description": "Record and review your private weight history in pounds or kilograms.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
@@ -11,29 +11,28 @@
     "standalone"
   ],
   "orientation": "any",
-  "background_color": "#fff5f7",
-  "theme_color": "#bb5474",
+  "background_color": "#fffaf0",
+  "theme_color": "#2b7fd4",
   "categories": [
     "health",
-    "food",
     "lifestyle"
   ],
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icons/food-desire-192.png",
+      "src": "./icons/weight-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/food-desire-512.png",
+      "src": "./icons/weight-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/food-desire-maskable-512.png",
+      "src": "./icons/weight-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

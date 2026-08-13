@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Generated with tools/generate-standalone-pwas.mjs. Edit this template, then regenerate. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -8,23 +9,23 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
     />
-    <meta name="description" content="A private bilingual health tracker for weight, water, exercise, food and progress." />
-    <meta name="theme-color" content="#eaf4ff" />
+    <meta name="description" content="Record cardio duration and your before-and-after exercise ratings." />
+    <meta name="theme-color" content="#527ad0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Health Journey" />
-    <title>My Health Journey</title>
+    <meta name="apple-mobile-web-app-title" content="Cardio" />
+    <title>Cardio Exercise</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./icons/health-apple-touch-180.png" />
-    <link rel="stylesheet" href="./app.css" />
-    <script defer src="./supabase-config.js"></script>
-    <script defer src="./i18n.js"></script>
-    <script defer src="./charts.js"></script>
-    <script defer src="./pwa-catalog.js"></script>
-    <script defer src="./app.js"></script>
-    <script type="module" src="./pwa-register.js"></script>
+    <link rel="apple-touch-icon" href="./icons/cardio-apple-touch-180.png" />
+    <link rel="stylesheet" href="../app.css" />
+    <script defer src="../supabase-config.js"></script>
+    <script defer src="../i18n.js"></script>
+    <script defer src="../charts.js"></script>
+    <script defer src="../pwa-catalog.js"></script>
+    <script defer src="../app.js"></script>
+    <script type="module" src="../pwa-register.js"></script>
   </head>
-  <body data-app-mode="main">
+  <body data-app-mode="standalone" data-tracker-key="cardio">
     <a class="skip-link" href="#main-content">Skip to tracker</a>
     <div class="ambient ambient-one" aria-hidden="true"></div>
     <div class="ambient ambient-two" aria-hidden="true"></div>
@@ -122,7 +123,12 @@
               <button type="button" class="unit-button is-active" data-unit="lb">lb</button>
               <button type="button" class="unit-button" data-unit="kg">kg</button>
             </div>
-            <a id="standalone-app-link" class="soft-link" href="./weight/"><span data-i18n="action.openThisStandalone">Open this tracker app</span></a>
+            <button type="button" id="mini-cloud-button" class="soft-button">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="mini-cloud-button-label">This browser</span>
+            </button>
+            <button type="button" class="soft-button" data-pwa-install><span data-i18n="action.install">Install app</span></button>
+            <a id="standalone-app-link" class="soft-link" href="../" hidden><span data-i18n="action.openThisStandalone">Open this tracker app</span></a>
             <button type="button" id="category-export-button" class="soft-button"><span data-i18n="action.exportPdf">Export PDF</span></button>
           </div>
         </nav>
@@ -223,7 +229,7 @@
             </div>
             <div class="food-desire-buttons">
               <button type="button" id="record-hunger-button" class="hunger-button"><span aria-hidden="true">＋</span><span data-i18n="action.recordHunger">Record hunger now</span></button>
-              <a id="food-desire-mini-link" class="soft-link" href="./food-desire/"><span data-i18n="action.openStandalone">Open Food Desire mini app</span></a>
+              <a id="food-desire-mini-link" class="soft-link" href="../" hidden><span data-i18n="action.openStandalone">Open Food Desire mini app</span></a>
             </div>
           </div>
           <div id="food-desire-summary" class="mini-summary"></div>
@@ -261,7 +267,12 @@
               <button type="button" class="language-button is-active" data-language="en">EN</button>
               <button type="button" class="language-button" data-language="zh-Hant">繁中</button>
             </div>
-            <a id="progress-standalone-app-link" class="soft-link" href="./progress/"><span data-i18n="action.openThisStandalone">Open this dashboard app</span></a>
+            <button type="button" id="progress-cloud-button" class="soft-button">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="progress-cloud-button-label">This browser</span>
+            </button>
+            <button type="button" class="soft-button" data-pwa-install><span data-i18n="action.install">Install app</span></button>
+            <a id="progress-standalone-app-link" class="soft-link" href="../" hidden><span data-i18n="action.openThisStandalone">Open this dashboard app</span></a>
             <button type="button" id="progress-export-button" class="soft-button"><span data-i18n="action.exportPdf">Export PDF</span></button>
           </div>
         </nav>

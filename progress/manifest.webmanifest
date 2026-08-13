@@ -1,8 +1,8 @@
 {
-  "id": "/Health-Tracker/food-desire/",
-  "name": "Food Desire Tracker",
-  "short_name": "Food Desire",
-  "description": "Record hunger moments, emotions and the food you want.",
+  "id": "/Health-Tracker/progress/",
+  "name": "All Dashboard Progress",
+  "short_name": "Progress",
+  "description": "View all weight, water, exercise, food and rating dashboards together.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
@@ -11,29 +11,29 @@
     "standalone"
   ],
   "orientation": "any",
-  "background_color": "#fff5f7",
-  "theme_color": "#bb5474",
+  "background_color": "#f0f8ff",
+  "theme_color": "#296cb5",
   "categories": [
     "health",
-    "food",
+    "fitness",
     "lifestyle"
   ],
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icons/food-desire-192.png",
+      "src": "./icons/progress-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/food-desire-512.png",
+      "src": "./icons/progress-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/food-desire-maskable-512.png",
+      "src": "./icons/progress-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

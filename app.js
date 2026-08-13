@@ -67,7 +67,13 @@
     "sportFocusGoal",
   ];
   let chartInstanceCounter = 0;
-  const appMode = document.body.dataset.appMode === "food-desire" ? "food-desire" : "main";
+  const pwaCatalog = Array.isArray(window.HealthPwaCatalog) ? window.HealthPwaCatalog : [];
+  const pwaByKey = new Map(pwaCatalog.map((entry) => [entry.key, entry]));
+  const requestedTrackerKey =
+    document.body.dataset.trackerKey ||
+    (document.body.dataset.appMode === "food-desire" ? "foodDesire" : "");
+  const standaloneTrackerKey = CARD_KEYS.includes(requestedTrackerKey) ? requestedTrackerKey : "";
+  const appMode = standaloneTrackerKey ? "standalone" : "main";
 
   const t = (key, variables = {}) =>
     window.HealthI18n.translate(key, variables, currentLanguage);
@@ -581,6 +587,8 @@
       recordCount: document.querySelector("#record-count"),
       backButton: document.querySelector("#back-button"),
       progressBackButton: document.querySelector("#progress-back-button"),
+      standaloneAppLink: document.querySelector("#standalone-app-link"),
+      progressStandaloneAppLink: document.querySelector("#progress-standalone-app-link"),
       categoryExportButton: document.querySelector("#category-export-button"),
       progressExportButton: document.querySelector("#progress-export-button"),
       exportAllButton: document.querySelector("#export-all-button"),
@@ -625,6 +633,8 @@
       cloudButtonLabel: document.querySelector("#cloud-button-label"),
       miniCloudButton: document.getElementById("mini-cloud-button"),
       miniCloudButtonLabel: document.getElementById("mini-cloud-button-label"),
+      progressCloudButton: document.getElementById("progress-cloud-button"),
+      progressCloudButtonLabel: document.getElementById("progress-cloud-button-label"),
       cloudDialog: document.querySelector("#cloud-dialog"),
       cloudDialogTitle: document.querySelector("#cloud-dialog-title"),
       cloudDialogCopy: document.querySelector("#cloud-dialog-copy"),
@@ -656,7 +666,8 @@
     renderAll();
     initCloud();
     const hashKey = window.location.hash.replace("#", "");
-    if (appMode === "food-desire") openCategory("foodDesire", false);
+    if (standaloneTrackerKey === "progress") showProgress(false);
+    else if (standaloneTrackerKey) openCategory(standaloneTrackerKey, false);
     else if (hashKey === "progress") showProgress(false);
     else if (configByKey[hashKey] && !configByKey[hashKey].hidden) openCategory(hashKey, false);
   }
@@ -702,6 +713,7 @@
     });
     elements.cloudButton.addEventListener("click", showCloudDialog);
     elements.miniCloudButton?.addEventListener("click", showCloudDialog);
+    elements.progressCloudButton?.addEventListener("click", showCloudDialog);
     elements.cloudSigninForm.addEventListener("submit", handleCloudSignin);
     elements.syncNowButton.addEventListener("click", () => syncAllRecords(true));
     elements.signoutButton.addEventListener("click", handleCloudSignout);
@@ -775,7 +787,10 @@
     updateUnitButtons();
     renderDashboard();
     if (currentView === "category" && currentCategory) renderCategory();
-    if (currentView === "progress") renderAllCharts();
+    if (currentView === "progress") {
+      renderAllCharts();
+      document.title = appMode === "standalone" ? configTitle("progress") : `${configTitle("progress")} · ${t("app.name")}`;
+    }
     updateCloudUi();
   }
 
@@ -816,6 +831,10 @@
     elements.printReport?.setAttribute("aria-label", currentLanguage === "zh-Hant" ? "可列印健康報告" : "Printable health report");
     elements.foodDesireDialog?.querySelector(".dialog-close")?.setAttribute("aria-label", t("aria.closeHunger"));
     elements.cloudDialog?.querySelector(".dialog-close")?.setAttribute("aria-label", t("aria.closeCloud"));
+    if (appMode === "standalone") {
+      elements.backButton.textContent = t("mini.back");
+      elements.progressBackButton.textContent = t("mini.back");
+    }
   }
 
   function configTitle(key) {
@@ -938,6 +957,7 @@
     elements.dashboardView.hidden = true;
     elements.progressView.hidden = true;
     elements.categoryView.hidden = false;
+    updateStandaloneLinks(key);
     renderCategory();
     if (updateHash && window.location.hash !== `#${key}`) {
       window.history.pushState(null, "", `#${key}`);
@@ -954,8 +974,9 @@
     elements.dashboardView.hidden = true;
     elements.categoryView.hidden = true;
     elements.progressView.hidden = false;
+    updateStandaloneLinks("progress");
     renderAllCharts();
-    document.title = `${configTitle("progress")} · ${t("app.name")}`;
+    document.title = appMode === "standalone" ? configTitle("progress") : `${configTitle("progress")} · ${t("app.name")}`;
     if (updateHash && window.location.hash !== "#progress") {
       window.history.pushState(null, "", "#progress");
     }
@@ -964,7 +985,7 @@
   }
 
   function handleBack() {
-    if (appMode === "food-desire") {
+    if (appMode === "standalone") {
       window.location.href = "../";
       return;
     }
@@ -988,7 +1009,7 @@
   }
 
   function handleHashChange() {
-    if (appMode === "food-desire") return;
+    if (appMode === "standalone") return;
     const key = window.location.hash.replace("#", "");
     if (key === "progress") showProgress(false);
     else if (configByKey[key] && !configByKey[key].hidden) openCategory(key, false);
@@ -1015,11 +1036,19 @@
     if (isExerciseTracker) renderRatingSurveys();
     if (currentCategory === "foodDesire") renderFoodDesireSummary();
     updateUnitButtons();
-    document.title = `${configTitle(currentCategory)} · ${t("app.name")}`;
-    if (appMode === "food-desire") {
+    document.title = appMode === "standalone" ? configTitle(currentCategory) : `${configTitle(currentCategory)} · ${t("app.name")}`;
+    if (appMode === "standalone") {
       elements.backButton.textContent = t("mini.back");
       elements.categoryExportButton.hidden = false;
     }
+  }
+
+  function updateStandaloneLinks(key) {
+    const catalogEntry = pwaByKey.get(key);
+    const link = key === "progress" ? elements.progressStandaloneAppLink : elements.standaloneAppLink;
+    if (!link) return;
+    link.hidden = appMode === "standalone" || !catalogEntry;
+    if (catalogEntry) link.href = new URL(`${catalogEntry.slug}/`, APP_BASE_URL).href;
   }
 
   function renderForm(record = null) {
@@ -2103,9 +2132,13 @@
     elements.printReport.hidden = true;
     elements.printReport.replaceChildren();
     document.title = currentView === "category" && currentCategory
-      ? `${configTitle(currentCategory)} · ${t("app.name")}`
+      ? appMode === "standalone"
+        ? configTitle(currentCategory)
+        : `${configTitle(currentCategory)} · ${t("app.name")}`
       : currentView === "progress"
-        ? `${configTitle("progress")} · ${t("app.name")}`
+        ? appMode === "standalone"
+          ? configTitle("progress")
+          : `${configTitle("progress")} · ${t("app.name")}`
         : t("app.name");
   }
 
@@ -2283,6 +2316,12 @@
       miniDot.classList.toggle("is-online", Boolean(cloudSession) && !cloudSyncInProgress);
       miniDot.classList.toggle("is-syncing", cloudSyncInProgress);
       elements.miniCloudButtonLabel.textContent = t(cloudSyncInProgress ? "cloud.syncing" : cloudSession ? "cloud.private" : "cloud.browser");
+    }
+    if (elements.progressCloudButton) {
+      const progressDot = elements.progressCloudButton.querySelector(".status-dot");
+      progressDot.classList.toggle("is-online", Boolean(cloudSession) && !cloudSyncInProgress);
+      progressDot.classList.toggle("is-syncing", cloudSyncInProgress);
+      elements.progressCloudButtonLabel.textContent = t(cloudSyncInProgress ? "cloud.syncing" : cloudSession ? "cloud.private" : "cloud.browser");
     }
     elements.cloudSigninForm.hidden = !cloudIsAvailable || Boolean(cloudSession);
     elements.cloudAccount.hidden = !cloudSession;

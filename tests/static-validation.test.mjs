@@ -13,6 +13,7 @@ const chartSource = read("charts.js");
 const cssSource = read("app.css");
 const i18nSource = read("i18n.js");
 const mainHtml = read("index.html");
+const pwaCatalog = JSON.parse(read("pwa-catalog.json"));
 
 function quotedArray(name) {
   const match = appSource.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
@@ -39,6 +40,12 @@ function resolvedReference(htmlRelativePath, reference) {
   const clean = reference.split(/[?#]/, 1)[0];
   const target = path.normalize(path.join(path.dirname(htmlRelativePath), clean));
   return target.endsWith(path.sep) ? path.join(target, "index.html") : target;
+}
+
+function pngDimensions(relativePath) {
+  const image = fs.readFileSync(path.join(root, relativePath));
+  assert.equal(image.subarray(1, 4).toString("ascii"), "PNG", `${relativePath} is not a PNG`);
+  return [image.readUInt32BE(16), image.readUInt32BE(20)];
 }
 
 function loadCatalogs() {
@@ -187,38 +194,53 @@ test("every local asset referenced by main HTML exists and uses a Pages-safe rel
   assert.deepEqual(missing, [], `Missing main-page assets: ${missing.join(", ")}`);
 });
 
-test("standalone food-desire page has the correct app mode, IDs and relative assets", () => {
-  assert.ok(exists("food-desire/index.html"), "Missing food-desire/index.html");
-  const miniHtml = read("food-desire/index.html");
-  assert.match(miniHtml, /<body\s+data-app-mode="food-desire">/);
-  assert.match(miniHtml, /<link\s+rel="manifest"\s+href="\.\/manifest\.webmanifest"/);
-  assert.match(miniHtml, /(?:src|href)="\.\.\/app\.js"/);
-  assert.match(miniHtml, /(?:src|href)="\.\.\/app\.css"/);
-  assert.match(
-    miniHtml,
-    /<button\s+type="button"\s+id="mini-cloud-button"(?![^>]*\bhidden\b)[^>]*>/,
-    "Mini app must expose its private-cloud control",
-  );
+test("all 14 tracker cards have complete standalone shells with distinct routes", () => {
+  assert.equal(pwaCatalog.length, 14);
+  assert.equal(new Set(pwaCatalog.map((entry) => entry.key)).size, 14, "Duplicate PWA keys");
+  assert.equal(new Set(pwaCatalog.map((entry) => entry.slug)).size, 14, "Duplicate PWA slugs");
+  assert.deepEqual(pwaCatalog.map((entry) => entry.key), quotedArray("CARD_KEYS"));
 
-  const ids = htmlIds(miniHtml);
-  assert.equal(new Set(ids).size, ids.length, "Duplicate IDs found in food-desire/index.html");
   const selectorIds = [
     ...appSource.matchAll(/document\.querySelector\(["']#([a-zA-Z0-9_-]+)["']\)/g),
   ].map((match) => match[1]);
-  const missingIds = [...new Set(selectorIds)].filter((id) => !ids.includes(id));
-  assert.deepEqual(
-    missingIds,
-    [],
-    `Mini app loads shared app.js but lacks required IDs: ${missingIds.join(", ")}`,
-  );
 
-  const references = localHtmlReferences(miniHtml);
-  const absolute = references.filter((reference) => reference.startsWith("/"));
-  assert.deepEqual(absolute, [], `Root-relative mini-app paths: ${absolute.join(", ")}`);
-  const missingAssets = references
-    .map((reference) => resolvedReference("food-desire/index.html", reference))
-    .filter((relativePath) => !exists(relativePath));
-  assert.deepEqual(missingAssets, [], `Missing mini-app assets: ${missingAssets.join(", ")}`);
+  for (const entry of pwaCatalog) {
+    const htmlPath = `${entry.slug}/index.html`;
+    assert.ok(exists(htmlPath), `Missing ${htmlPath}`);
+    const html = read(htmlPath);
+    assert.match(
+      html,
+      new RegExp(`<body\\s+data-app-mode="standalone"\\s+data-tracker-key="${entry.key}">`),
+    );
+    assert.match(html, /<link\s+rel="manifest"\s+href="\.\/manifest\.webmanifest"/);
+    assert.match(html, /(?:src|href)="\.\.\/app\.js"/);
+    assert.match(html, /(?:src|href)="\.\.\/app\.css"/);
+    assert.match(html, /(?:src|href)="\.\.\/pwa-catalog\.js"/);
+    assert.match(html, /(?:src|href)="\.\.\/pwa-register\.js"/);
+    assert.match(html, /\bdata-pwa-install\b/, `${entry.slug} needs an install control`);
+
+    const ids = htmlIds(html);
+    assert.equal(new Set(ids).size, ids.length, `Duplicate IDs found in ${htmlPath}`);
+    const missingIds = [...new Set(selectorIds)].filter((id) => !ids.includes(id));
+    assert.deepEqual(
+      missingIds,
+      [],
+      `${htmlPath} loads shared app.js but lacks IDs: ${missingIds.join(", ")}`,
+    );
+
+    const references = localHtmlReferences(html);
+    const absolute = references.filter((reference) => reference.startsWith("/"));
+    assert.deepEqual(absolute, [], `Root-relative paths in ${htmlPath}: ${absolute.join(", ")}`);
+    const missingAssets = references
+      .map((reference) => resolvedReference(htmlPath, reference))
+      .filter((relativePath) => !exists(relativePath));
+    assert.deepEqual(missingAssets, [], `Missing assets for ${htmlPath}: ${missingAssets.join(", ")}`);
+
+    const appleIcon = html.match(/<link\s+rel="apple-touch-icon"\s+href="([^"]+)"/)?.[1];
+    assert.ok(appleIcon, `${entry.slug} needs an Apple touch icon`);
+    const applePath = resolvedReference(htmlPath, appleIcon);
+    assert.deepEqual(pngDimensions(applePath), [180, 180], `${applePath} must be 180x180`);
+  }
 });
 
 test("English and Traditional Chinese catalogs have identical keys and cover literal references", () => {
@@ -294,53 +316,77 @@ test("charts expose SVG semantics plus an accessible data-table fallback", () =>
   assert.match(appSource, /tickValues: \[1, 2, 3, 4, 5, 6, 7\]/);
 });
 
-test("PWA manifests, mini app, local SDK, icons and service worker are complete", () => {
+test("the main app plus all 14 tracker PWAs have unique install identities and complete assets", () => {
   const required = [
     "manifest.webmanifest",
+    "pwa-catalog.json",
+    "pwa-catalog.js",
     "pwa-register.js",
     "sw.js",
     "vendor/supabase.min.js",
-    "food-desire/index.html",
-    "food-desire/manifest.webmanifest",
   ];
   const missing = required.filter((relativePath) => !exists(relativePath));
   assert.deepEqual(missing, [], `Missing PWA files: ${missing.join(", ")}`);
 
-  const mainManifest = JSON.parse(read("manifest.webmanifest"));
-  const miniManifest = JSON.parse(read("food-desire/manifest.webmanifest"));
-  for (const [label, manifest] of [
-    ["main", mainManifest],
-    ["food desire", miniManifest],
-  ]) {
+  const catalogSandbox = { window: {} };
+  vm.runInNewContext(read("pwa-catalog.js"), catalogSandbox, { filename: "pwa-catalog.js" });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(catalogSandbox.window.HealthPwaCatalog)),
+    pwaCatalog,
+    "Browser PWA catalog must match its JSON source",
+  );
+
+  const manifestRecords = [
+    { label: "main", path: "manifest.webmanifest", manifest: JSON.parse(read("manifest.webmanifest")) },
+    ...pwaCatalog.map((entry) => {
+      const manifestPath = `${entry.slug}/manifest.webmanifest`;
+      assert.ok(exists(manifestPath), `Missing ${manifestPath}`);
+      return { label: entry.slug, path: manifestPath, entry, manifest: JSON.parse(read(manifestPath)) };
+    }),
+  ];
+  assert.equal(manifestRecords.length, 15, "Expected one main PWA and 14 tracker PWAs");
+
+  const ids = new Set();
+  const starts = new Set();
+  const scopes = new Set();
+  const names = new Set();
+  for (const { label, path: manifestPath, entry, manifest } of manifestRecords) {
     assert.ok(manifest.id, `${label} manifest needs a stable id`);
     assert.ok(manifest.start_url, `${label} manifest needs start_url`);
     assert.ok(manifest.scope, `${label} manifest needs scope`);
     assert.ok(!manifest.start_url.startsWith("/"), `${label} start_url must be Pages-relative`);
     assert.ok(!manifest.scope.startsWith("/"), `${label} scope must be Pages-relative`);
     assert.equal(manifest.display, "standalone");
-    const sizes = new Set((manifest.icons || []).map((icon) => icon.sizes));
-    assert.ok(sizes.has("192x192"), `${label} manifest needs a 192x192 icon`);
-    assert.ok(sizes.has("512x512"), `${label} manifest needs a 512x512 icon`);
-  }
-  assert.notEqual(mainManifest.id, miniManifest.id, "The two PWAs need distinct manifest IDs");
-  const mainStart = new URL(mainManifest.start_url, "https://example.test/Health-Tracker/manifest.webmanifest").href;
-  const miniStart = new URL(
-    miniManifest.start_url,
-    "https://example.test/Health-Tracker/food-desire/manifest.webmanifest",
-  ).href;
-  assert.notEqual(mainStart, miniStart, "The two PWAs need distinct resolved start URLs");
+    if (entry) assert.equal(manifest.id, `/Health-Tracker/${entry.slug}/`);
 
-  const iconReferences = [
-    ...(mainManifest.icons || []).map((icon) => ["", icon.src]),
-    ...(miniManifest.icons || []).map((icon) => ["food-desire", icon.src]),
-  ];
-  const missingIcons = iconReferences
-    .filter(([, src]) => !/^[a-z][a-z0-9+.-]*:/i.test(src))
-    .map(([base, src]) => path.normalize(path.join(base, src)))
-    .filter((relativePath) => !exists(relativePath));
-  assert.deepEqual(missingIcons, [], `Missing manifest icons: ${missingIcons.join(", ")}`);
+    const manifestUrl = `https://example.test/Health-Tracker/${manifestPath}`;
+    ids.add(manifest.id);
+    starts.add(new URL(manifest.start_url, manifestUrl).href);
+    scopes.add(new URL(manifest.scope, manifestUrl).href);
+    names.add(manifest.name);
+
+    const icons = manifest.icons || [];
+    const any192 = icons.find((icon) => icon.sizes === "192x192" && icon.purpose === "any");
+    const any512 = icons.find((icon) => icon.sizes === "512x512" && icon.purpose === "any");
+    const maskable512 = icons.find((icon) => icon.sizes === "512x512" && icon.purpose === "maskable");
+    assert.ok(any192, `${label} manifest needs a 192x192 any-purpose icon`);
+    assert.ok(any512, `${label} manifest needs a 512x512 any-purpose icon`);
+    assert.ok(maskable512, `${label} manifest needs a 512x512 maskable icon`);
+
+    for (const icon of icons) {
+      const relativePath = path.normalize(path.join(path.dirname(manifestPath), icon.src));
+      assert.ok(exists(relativePath), `Missing icon ${relativePath}`);
+      const expected = icon.sizes === "192x192" ? [192, 192] : [512, 512];
+      assert.deepEqual(pngDimensions(relativePath), expected, `${relativePath} has the wrong size`);
+    }
+  }
+  assert.equal(ids.size, 15, "All PWA manifest IDs must be unique");
+  assert.equal(starts.size, 15, "All PWA start URLs must resolve uniquely");
+  assert.equal(scopes.size, 15, "All PWA scopes must resolve uniquely");
+  assert.equal(names.size, 15, "All installed PWA names must be distinct");
 
   const registration = read("pwa-register.js");
+  assert.match(registration, /new URL\(["']\.\/sw\.js["'],\s*import\.meta\.url\)/);
   assert.match(registration, /navigator\.serviceWorker\.register/);
   assert.match(registration, /controllerchange/);
   assert.match(registration, /window\.location\.reload\(\)/);
@@ -353,7 +399,11 @@ test("PWA manifests, mini app, local SDK, icons and service worker are complete"
     "Standalone install buttons must have exactly one click-handler owner",
   );
   const worker = read("sw.js");
-  assert.match(worker, /health-tracker-shell-v2/);
+  assert.match(worker, /importScripts\(["']\.\/pwa-catalog\.js["']\)/);
+  assert.match(worker, /health-tracker-shell-v3/);
+  assert.match(worker, /STANDALONE_APPS\.flatMap/);
+  assert.match(worker, /entry\.slug === routeSlug/);
+  assert.match(worker, /standaloneApp \? `\$\{standaloneApp\.slug\}\/index\.html` : "index\.html"/);
   assert.match(worker, /request\.method\s*!==\s*["']GET["']/);
   assert.match(worker, /url\.origin\s*!==\s*self\.location\.origin/);
   assert.doesNotMatch(worker, /supabase\.co|\/auth\/v1|\/rest\/v1/i);
@@ -363,6 +413,10 @@ test("PWA manifests, mini app, local SDK, icons and service worker are complete"
     /startsWith\(["']health-tracker-shell-["']\)/,
     "Activation must only delete old Health Tracker caches, never caches owned by other GitHub Pages apps",
   );
+  assert.match(appSource, /if \(standaloneTrackerKey === "progress"\) showProgress\(false\)/);
+  assert.match(appSource, /else if \(standaloneTrackerKey\) openCategory\(standaloneTrackerKey, false\)/);
+  assert.match(appSource, /if \(appMode === "standalone"\) return;/);
+  assert.match(appSource, /if \(appMode === "standalone"\) \{\s*window\.location\.href = "\.\.\/";/);
 });
 
 test("food desire, list trackers and both exercise surveys preserve required data semantics", () => {
