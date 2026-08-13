@@ -1215,11 +1215,93 @@ button:disabled {
   margin-top: 0;
 }
 
+.collapsible-dashboard > .dashboard-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: #244c72;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 900;
+  list-style: none;
+}
+
+.collapsible-dashboard > .dashboard-summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-dashboard > .dashboard-summary::after {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid rgba(35, 79, 119, 0.16);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  content: "+";
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.collapsible-dashboard[open] > .dashboard-summary {
+  margin-bottom: 20px;
+}
+
+.collapsible-dashboard[open] > .dashboard-summary::after {
+  content: "−";
+}
+
+.collapsible-dashboard > .dashboard-summary:focus-visible {
+  border-radius: 8px;
+  outline: 3px solid rgba(25, 111, 202, 0.28);
+  outline-offset: 6px;
+}
+
 /* Exercise desire */
 .desire-panel {
   background:
     radial-gradient(circle at 95% 8%, rgba(226, 214, 255, 0.7), transparent 28%),
     rgba(255, 255, 255, 0.78);
+}
+
+.survey-block + .survey-block {
+  margin-top: 34px;
+  padding-top: 34px;
+  border-top: 1px solid rgba(83, 74, 127, 0.16);
+}
+
+.survey-chart {
+  margin: 0 0 18px;
+}
+
+.survey-chart[open] {
+  padding-bottom: 20px;
+}
+
+.post-exercise-survey {
+  --post-accent: #287e6a;
+}
+
+.post-rating-scale .rating-button {
+  color: #276b5c;
+  border-color: rgba(39, 126, 106, 0.18);
+}
+
+.post-rating-scale .rating-button.is-pending {
+  color: white;
+  background: #3d9b83;
+}
+
+.post-rating-scale .rating-button.is-saved {
+  color: white;
+  background: linear-gradient(145deg, #31947b, #236a5a);
+  box-shadow: 0 9px 20px rgba(35, 106, 90, 0.22);
+}
+
+.post-rating-status {
+  color: #276b5c;
 }
 
 .desire-scale-labels {

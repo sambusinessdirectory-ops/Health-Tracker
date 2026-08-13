@@ -133,46 +133,83 @@
           </div>
         </header>
 
-        <section id="category-chart-panel" class="chart-panel" hidden aria-labelledby="category-chart-title">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow" data-i18n="section.progress">PROGRESS</p>
-              <h2 id="category-chart-title" data-i18n="section.chart">Progress dashboard</h2>
-            </div>
-          </div>
+        <details id="category-chart-panel" class="chart-panel collapsible-dashboard" hidden open>
+          <summary id="category-chart-summary" class="dashboard-summary">Show or hide progress dashboard</summary>
           <div id="category-chart"></div>
-        </section>
+        </details>
 
         <section id="exercise-desire-panel" class="desire-panel" hidden>
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow" data-i18n="section.desire">EXERCISE DESIRE</p>
-              <h2 data-i18n="section.desireTitle">How much do you feel like exercising today?</h2>
-              <p class="panel-copy" data-i18n="section.desireCopy">Tap 1–7. After two seconds, confirm the score and it will replace today’s previous score.</p>
-            </div>
-          </div>
-          <div class="desire-scale-labels" aria-hidden="true">
-            <span data-i18n="desire.scaleLow">No desire</span><span data-i18n="desire.scaleHigh">Very strong desire</span>
-          </div>
-          <div id="exercise-desire-scale" class="rating-scale" role="group" aria-label="Exercise desire from 1 to 7"></div>
-          <p id="exercise-desire-status" class="rating-status" role="status" aria-live="polite"></p>
-          <div class="subpanel-grid">
-            <section class="subpanel" aria-labelledby="desire-history-title">
-              <h3 id="desire-history-title" data-i18n="section.desireHistory">Exercise desire history</h3>
-              <div id="exercise-desire-table" class="table-wrap"></div>
-            </section>
-            <section class="subpanel" aria-labelledby="desire-export-title">
-              <h3 id="desire-export-title" data-i18n="section.desireExport">Export exercise desire</h3>
-              <p data-i18n="section.desireExportCopy">Leave both dates blank for all time, or choose a custom date range.</p>
-              <div class="date-range-form">
-                <label><span data-i18n="field.fromDate">From date</span><input id="desire-date-from" type="date" /></label>
-                <label><span data-i18n="field.toDate">To date</span><input id="desire-date-to" type="date" /></label>
-                <button type="button" id="desire-export-button" class="primary-button"><span data-i18n="action.exportDesire">Export desire PDF</span></button>
-                <button type="button" id="desire-clear-range-button" class="text-button"><span data-i18n="action.clearRange">Clear dates</span></button>
+          <section class="survey-block" aria-labelledby="exercise-desire-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow" data-i18n="section.desire">EXERCISE DESIRE</p>
+                <h2 id="exercise-desire-title" data-i18n="section.desireTitle">How much do you feel like exercising today?</h2>
+                <p class="panel-copy" data-i18n="section.desireCopy">Tap 1–7. After two seconds, confirm the score and it will replace today’s previous score.</p>
               </div>
-              <div id="desire-range-error" class="form-error" role="alert" hidden></div>
-            </section>
-          </div>
+            </div>
+            <div class="desire-scale-labels" aria-hidden="true">
+              <span data-i18n="desire.scaleLow">No desire</span><span data-i18n="desire.scaleHigh">Very strong desire</span>
+            </div>
+            <div id="exercise-desire-scale" class="rating-scale" role="group" aria-label="Exercise desire from 1 to 7"></div>
+            <p id="exercise-desire-status" class="rating-status" role="status" aria-live="polite"></p>
+            <details id="exercise-desire-chart-details" class="subpanel survey-chart collapsible-dashboard" open>
+              <summary id="exercise-desire-chart-summary" class="dashboard-summary">Show or hide exercise desire chart</summary>
+              <div id="exercise-desire-chart"></div>
+            </details>
+            <div class="subpanel-grid">
+              <section class="subpanel" aria-labelledby="desire-history-title">
+                <h3 id="desire-history-title" data-i18n="section.desireHistory">Exercise desire history</h3>
+                <div id="exercise-desire-table" class="table-wrap"></div>
+              </section>
+              <section class="subpanel" aria-labelledby="desire-export-title">
+                <h3 id="desire-export-title" data-i18n="section.desireExport">Export exercise desire</h3>
+                <p data-i18n="section.desireExportCopy">Leave both dates blank for all time, or choose a custom date range.</p>
+                <div class="date-range-form">
+                  <label><span data-i18n="field.fromDate">From date</span><input id="desire-date-from" type="date" /></label>
+                  <label><span data-i18n="field.toDate">To date</span><input id="desire-date-to" type="date" /></label>
+                  <button type="button" id="desire-export-button" class="primary-button"><span data-i18n="action.exportDesire">Export desire PDF</span></button>
+                  <button type="button" id="desire-clear-range-button" class="text-button"><span data-i18n="action.clearRange">Clear dates</span></button>
+                </div>
+                <div id="desire-range-error" class="form-error" role="alert" hidden></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="survey-block post-exercise-survey" aria-labelledby="post-exercise-feeling-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow" data-i18n="section.postFeeling">AFTER EXERCISE</p>
+                <h2 id="post-exercise-feeling-title" data-i18n="section.postFeelingTitle">How much better do you feel after doing the sports?</h2>
+                <p class="panel-copy" data-i18n="section.postFeelingCopy">Tap 1–7. 1 is bad and 7 is feeling fantastic. Confirm after two seconds.</p>
+              </div>
+            </div>
+            <div class="desire-scale-labels" aria-hidden="true">
+              <span data-i18n="postFeeling.scaleLow">Bad</span><span data-i18n="postFeeling.scaleHigh">Feeling fantastic</span>
+            </div>
+            <div id="post-exercise-feeling-scale" class="rating-scale post-rating-scale" role="group" aria-label="Post-exercise feeling from 1 to 7"></div>
+            <p id="post-exercise-feeling-status" class="rating-status post-rating-status" role="status" aria-live="polite"></p>
+            <details id="post-exercise-feeling-chart-details" class="subpanel survey-chart collapsible-dashboard" open>
+              <summary id="post-exercise-feeling-chart-summary" class="dashboard-summary">Show or hide post-exercise feeling chart</summary>
+              <div id="post-exercise-feeling-chart"></div>
+            </details>
+            <div class="subpanel-grid">
+              <section class="subpanel" aria-labelledby="post-feeling-history-title">
+                <h3 id="post-feeling-history-title" data-i18n="section.postFeelingHistory">Post-exercise feeling history</h3>
+                <div id="post-exercise-feeling-table" class="table-wrap"></div>
+              </section>
+              <section class="subpanel" aria-labelledby="post-feeling-export-title">
+                <h3 id="post-feeling-export-title" data-i18n="section.postFeelingExport">Export post-exercise feelings</h3>
+                <p data-i18n="section.desireExportCopy">Leave both dates blank for all time, or choose a custom date range.</p>
+                <div class="date-range-form">
+                  <label><span data-i18n="field.fromDate">From date</span><input id="post-feeling-date-from" type="date" /></label>
+                  <label><span data-i18n="field.toDate">To date</span><input id="post-feeling-date-to" type="date" /></label>
+                  <button type="button" id="post-feeling-export-button" class="primary-button"><span data-i18n="action.exportPostFeeling">Export feelings PDF</span></button>
+                  <button type="button" id="post-feeling-clear-range-button" class="text-button"><span data-i18n="action.clearRange">Clear dates</span></button>
+                </div>
+                <div id="post-feeling-range-error" class="form-error" role="alert" hidden></div>
+              </section>
+            </div>
+          </section>
         </section>
 
         <section id="food-desire-panel" class="food-desire-panel" hidden>
@@ -227,7 +264,7 @@
         </nav>
         <header class="category-header">
           <span class="category-icon" aria-hidden="true">↗</span>
-          <div><p class="eyebrow"><span data-i18n="tracker.kicker">TRACKER</span> 09</p><h1 id="progress-title" tabindex="-1" data-i18n="tracker.progress.title">All Dashboard Progress</h1><p data-i18n="section.allChartsCopy">Weight, water, cardio, total strength repetitions and meal calories in one place.</p></div>
+          <div><p class="eyebrow"><span data-i18n="tracker.kicker">TRACKER</span> 09</p><h1 id="progress-title" tabindex="-1" data-i18n="tracker.progress.title">All Dashboard Progress</h1><p data-i18n="section.allChartsCopy">Weight, water, cardio, total strength repetitions, meal calories and both exercise ratings in one place.</p></div>
         </header>
         <section id="all-charts-grid" class="all-charts-grid" aria-label="All progress dashboards"></section>
       </section>

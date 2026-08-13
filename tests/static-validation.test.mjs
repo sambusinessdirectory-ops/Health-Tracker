@@ -109,10 +109,52 @@ test("record, form, chart, card and category keys remain internally consistent",
     "calories",
     "foodDesire",
     "exerciseDesire",
+    "postExerciseFeeling",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
   ]);
-  assert.deepEqual(formKeys, recordKeys.slice(0, 8));
-  assert.deepEqual(chartKeys, ["weight", "water", "cardio", "strength", "food"]);
-  assert.match(appSource, /const CARD_KEYS = \[\.\.\.FORM_CATEGORY_KEYS, "progress", "foodDesire"\]/);
+  assert.deepEqual(formKeys, [
+    "weight",
+    "water",
+    "cardio",
+    "strength",
+    "food",
+    "groceries",
+    "mealPrep",
+    "calories",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
+  ]);
+  assert.deepEqual(chartKeys, [
+    "weight",
+    "water",
+    "cardio",
+    "strength",
+    "food",
+    "exerciseDesire",
+    "postExerciseFeeling",
+  ]);
+  assert.deepEqual(quotedArray("CARD_KEYS"), [
+    "weight",
+    "water",
+    "cardio",
+    "strength",
+    "food",
+    "groceries",
+    "mealPrep",
+    "calories",
+    "progress",
+    "foodDesire",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
+  ]);
+  assert.deepEqual(quotedArray("RATING_KEYS"), ["exerciseDesire", "postExerciseFeeling"]);
 
   const categoryBlock = appSource.match(
     /const categoryConfigs = \[([\s\S]*?)\n  \];\n\n  const progressCard/,
@@ -152,6 +194,11 @@ test("standalone food-desire page has the correct app mode, IDs and relative ass
   assert.match(miniHtml, /<link\s+rel="manifest"\s+href="\.\/manifest\.webmanifest"/);
   assert.match(miniHtml, /(?:src|href)="\.\.\/app\.js"/);
   assert.match(miniHtml, /(?:src|href)="\.\.\/app\.css"/);
+  assert.match(
+    miniHtml,
+    /<button\s+type="button"\s+id="mini-cloud-button"(?![^>]*\bhidden\b)[^>]*>/,
+    "Mini app must expose its private-cloud control",
+  );
 
   const ids = htmlIds(miniHtml);
   assert.equal(new Set(ids).size, ids.length, "Duplicate IDs found in food-desire/index.html");
@@ -187,18 +234,21 @@ test("English and Traditional Chinese catalogs have identical keys and cover lit
     ...mainHtml.matchAll(/\bdata-i18n(?:-placeholder)?="([^"]+)"/g),
   ].map((match) => match[1]);
   const requiredFamilies = [
-    ...["weight", "water", "cardio", "strength", "food", "groceries", "mealPrep", "calories", "progress", "foodDesire", "exerciseDesire"].map((key) => `tracker.${key}.title`),
-    ...["weight", "water", "cardio", "strength", "food"].flatMap((key) => [
+    ...["weight", "water", "cardio", "strength", "food", "groceries", "mealPrep", "calories", "progress", "foodDesire", "exerciseDesire", "postExerciseFeeling", "foodPreference", "foodCutGoal", "sportPreference", "sportFocusGoal"].map((key) => `tracker.${key}.title`),
+    ...["weight", "water", "cardio", "strength", "food", "exerciseDesire", "postExerciseFeeling"].flatMap((key) => [
       `chart.${key}.title`,
       `chart.${key}.subtitle`,
       `chart.${key}.y`,
     ]),
-    ...["weight", "water", "cardio", "strength"].map((key) => `chart.series.${key}`),
+    ...["weight", "water", "cardio", "strength", "exerciseDesire", "postExerciseFeeling"].map((key) => `chart.series.${key}`),
     ...["breakfast", "lunch", "dinner", "total"].map((key) => `chart.series.${key}`),
   ];
   const referenced = [...new Set([...literalAppKeys, ...htmlKeys, ...requiredFamilies])];
   const missing = referenced.filter((key) => !(key in catalogs.en));
   assert.deepEqual(missing, [], `Missing translation keys: ${missing.join(", ")}`);
+  assert.match(appSource, /function formatLitres[\s\S]*?t\(["']unit\.litre["']\)/);
+  assert.match(appSource, /function formatMinutes[\s\S]*?t\(["']unit\.minute["']\)/);
+  assert.match(appSource, /function formatCalories[\s\S]*?t\(["']unit\.calorie["']\)/);
 });
 
 test("new UI components have production CSS coverage", () => {
@@ -220,6 +270,10 @@ test("new UI components have production CSS coverage", () => {
     ".date-range-form",
     ".sr-only",
     ".print-chart-section",
+    ".collapsible-dashboard",
+    ".dashboard-summary",
+    ".survey-block",
+    ".post-rating-scale",
   ];
   const missing = selectors.filter((selector) => !cssSource.includes(selector));
   assert.deepEqual(missing, [], `Missing CSS selectors: ${missing.join(", ")}`);
@@ -232,8 +286,12 @@ test("charts expose SVG semantics plus an accessible data-table fallback", () =>
   assert.match(chartSource, /svgElement\(["']desc["']/);
   assert.match(chartSource, /createAccessibleTable\(model\)/);
   assert.match(chartSource, /line\.dash/);
+  assert.match(chartSource, /model\.domain\?\.minimum/);
+  assert.match(chartSource, /model\.tickValues/);
   assert.match(appSource, /day\.total \+= calories/);
   assert.match(appSource, /number\(record\.sets\) \* number\(record\.reps\)/);
+  assert.match(appSource, /domain: \{ minimum: 1, maximum: 7 \}/);
+  assert.match(appSource, /tickValues: \[1, 2, 3, 4, 5, 6, 7\]/);
 });
 
 test("PWA manifests, mini app, local SDK, icons and service worker are complete", () => {
@@ -284,6 +342,8 @@ test("PWA manifests, mini app, local SDK, icons and service worker are complete"
 
   const registration = read("pwa-register.js");
   assert.match(registration, /navigator\.serviceWorker\.register/);
+  assert.match(registration, /controllerchange/);
+  assert.match(registration, /window\.location\.reload\(\)/);
   const installBindingOwners = [appSource, registration].filter((source) =>
     /querySelectorAll\(\s*["']\[data-pwa-install\]["']\s*\)[\s\S]{0,240}addEventListener/.test(source),
   );
@@ -293,6 +353,7 @@ test("PWA manifests, mini app, local SDK, icons and service worker are complete"
     "Standalone install buttons must have exactly one click-handler owner",
   );
   const worker = read("sw.js");
+  assert.match(worker, /health-tracker-shell-v2/);
   assert.match(worker, /request\.method\s*!==\s*["']GET["']/);
   assert.match(worker, /url\.origin\s*!==\s*self\.location\.origin/);
   assert.doesNotMatch(worker, /supabase\.co|\/auth\/v1|\/rest\/v1/i);
@@ -304,15 +365,30 @@ test("PWA manifests, mini app, local SDK, icons and service worker are complete"
   );
 });
 
-test("food desire and exercise desire preserve required data semantics", () => {
+test("food desire, list trackers and both exercise surveys preserve required data semantics", () => {
   assert.match(appSource, /hungerOccurredAt = new Date\(\)\.toISOString\(\)/);
   assert.match(appSource, /id:\s*makeId\(\)[\s\S]*occurredAt/);
   assert.match(appSource, /foodDesired:\s*elements\.foodDesired\.value/);
   assert.match(appSource, /if \(elements\.foodDesired\.value === "others" && !otherFood\)/);
   assert.match(appSource, /window\.setTimeout\([\s\S]*?, 2000\)/);
-  assert.match(appSource, /exerciseDesireSaveQueue = exerciseDesireSaveQueue\.then/);
+  assert.match(appSource, /RATING_KEYS\.map\(\(key\) => \[key, \{ timer: null, generation: 0, saveQueue: Promise\.resolve\(\) \}\]\)/);
+  assert.match(appSource, /controller\.saveQueue = controller\.saveQueue\.then\(\(\) => \{[\s\S]*ratingSaveQueue = ratingSaveQueue\.then\(\(\) => saveRating\(key, rating\)\)/);
   assert.match(appSource, /findIndex\(\(record\) => record\.date === date\)/);
-  assert.match(appSource, /printCategories\(\["exerciseDesire"\]/);
+  assert.match(appSource, /printCategories\(\[key\], \{ from, to, recordsByKey: \{ \[key\]: records \} \}\)/);
+  assert.match(appSource, /if \(config\.autoDate\)/);
+  assert.match(appSource, /record\.date = editingId \? findCurrentRecord\(editingId\)\?\.date \|\| todayIso\(\) : todayIso\(\)/);
+  assert.match(appSource, /currentCategory === "cardio" \|\| currentCategory === "strength"/);
+
+  for (const id of [
+    "exercise-desire-scale",
+    "post-exercise-feeling-scale",
+    "exercise-desire-chart-details",
+    "post-exercise-feeling-chart-details",
+  ]) {
+    assert.match(mainHtml, new RegExp(`id="${id}"`));
+  }
+  assert.match(mainHtml, /<details id="category-chart-panel"/);
+  assert.match(appSource, /document\.createElement\("details"\)/);
 });
 
 test("pure aggregation and date-range hooks behave correctly", () => {
@@ -331,6 +407,18 @@ test("pure aggregation and date-range hooks behave correctly", () => {
     ["2026-08-01", 3.5],
     ["2026-08-03", 4],
   ]);
+
+  const ratings = hooks.ratingDateData([
+    { date: "2026-08-03", rating: 7, updatedAt: "2026-08-03T10:00:00Z" },
+    { date: "2026-08-01", rating: 2, updatedAt: "2026-08-01T10:00:00Z" },
+    { date: "2026-08-01", rating: 6, updatedAt: "2026-08-01T11:00:00Z" },
+    { date: "2026-08-02", rating: 8, updatedAt: "2026-08-02T10:00:00Z" },
+    { date: "2026-08-04", rating: 2.5, updatedAt: "2026-08-04T10:00:00Z" },
+  ]);
+  assert.deepEqual(JSON.parse(JSON.stringify(ratings)), [
+    ["2026-08-01", 6],
+    ["2026-08-03", 7],
+  ], "Rating charts must choose the newest valid score per date, never sum scores");
 
   const records = [
     { date: "2026-08-01", id: "a" },
@@ -354,8 +442,25 @@ test("Supabase migration expands the category constraint without weakening owner
   const sql = sqlFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
   assert.match(sql, /foodDesire/);
   assert.match(sql, /exerciseDesire/);
+  for (const category of [
+    "postExerciseFeeling",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
+  ]) {
+    assert.match(sql, new RegExp(category));
+  }
   assert.match(sql, /health_entries_category_check/);
   assert.match(sql, /enable row level security/i);
   assert.match(sql, /auth\.uid\(\).*user_id|user_id.*auth\.uid\(\)/is);
   assert.doesNotMatch(sql, /disable row level security/i);
+
+  const latest = read("supabase/migrations/20260813030136_add_preferences_and_post_exercise.sql");
+  const dailyIndex = latest.match(/create unique index health_entries_one_daily_record_idx([\s\S]*?)commit;/i)?.[1] || "";
+  assert.match(dailyIndex, /exerciseDesire/);
+  assert.match(dailyIndex, /postExerciseFeeling/);
+  for (const listCategory of ["foodPreference", "foodCutGoal", "sportPreference", "sportFocusGoal"]) {
+    assert.doesNotMatch(dailyIndex, new RegExp(listCategory), `${listCategory} must allow multiple entries per day`);
+  }
 });

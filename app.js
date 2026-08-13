@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "myHealthJourney:v1";
   const LANGUAGE_KEY = "myHealthJourney:language";
+  const DASHBOARD_STATE_KEY = "myHealthJourney:dashboards:v1";
   const SUPABASE_TABLE = "health_entries";
   const APP_BASE_URL = new URL(".", document.currentScript.src);
   const SUPABASE_SDK_URL = new URL("vendor/supabase.min.js", APP_BASE_URL).href;
@@ -19,6 +20,11 @@
     "calories",
     "foodDesire",
     "exerciseDesire",
+    "postExerciseFeeling",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
   ];
   const FORM_CATEGORY_KEYS = [
     "weight",
@@ -29,9 +35,37 @@
     "groceries",
     "mealPrep",
     "calories",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
   ];
-  const CHART_KEYS = ["weight", "water", "cardio", "strength", "food"];
-  const CARD_KEYS = [...FORM_CATEGORY_KEYS, "progress", "foodDesire"];
+  const CHART_KEYS = [
+    "weight",
+    "water",
+    "cardio",
+    "strength",
+    "food",
+    "exerciseDesire",
+    "postExerciseFeeling",
+  ];
+  const RATING_KEYS = ["exerciseDesire", "postExerciseFeeling"];
+  const CARD_KEYS = [
+    "weight",
+    "water",
+    "cardio",
+    "strength",
+    "food",
+    "groceries",
+    "mealPrep",
+    "calories",
+    "progress",
+    "foodDesire",
+    "foodPreference",
+    "foodCutGoal",
+    "sportPreference",
+    "sportFocusGoal",
+  ];
   let chartInstanceCounter = 0;
   const appMode = document.body.dataset.appMode === "food-desire" ? "food-desire" : "main";
 
@@ -385,6 +419,90 @@
       hidden: true,
       fields: [],
     },
+    {
+      key: "postExerciseFeeling",
+      number: "03F",
+      icon: "7",
+      uniqueDate: true,
+      hidden: true,
+      fields: [],
+    },
+    {
+      key: "foodPreference",
+      number: "11",
+      icon: "♥",
+      colors: ["#fff8f2", "#ffd9bf", "#c96b3e"],
+      autoDate: true,
+      fields: [
+        {
+          key: "item",
+          labelKey: "field.foodPreference",
+          type: "text",
+          required: true,
+          className: "wide",
+          maxLength: 160,
+          placeholderKey: "field.foodPreferencePlaceholder",
+        },
+        notesField(),
+      ],
+    },
+    {
+      key: "foodCutGoal",
+      number: "12",
+      icon: "↓",
+      colors: ["#fff7f3", "#ffcfc7", "#b9534b"],
+      autoDate: true,
+      fields: [
+        {
+          key: "item",
+          labelKey: "field.foodCutGoal",
+          type: "text",
+          required: true,
+          className: "wide",
+          maxLength: 160,
+          placeholderKey: "field.foodCutGoalPlaceholder",
+        },
+        notesField(),
+      ],
+    },
+    {
+      key: "sportPreference",
+      number: "13",
+      icon: "S",
+      colors: ["#f3fbff", "#c8e9f4", "#247b98"],
+      autoDate: true,
+      fields: [
+        {
+          key: "sport",
+          labelKey: "field.sportPreference",
+          type: "text",
+          required: true,
+          className: "wide",
+          maxLength: 160,
+          placeholderKey: "field.sportPreferencePlaceholder",
+        },
+        notesField(),
+      ],
+    },
+    {
+      key: "sportFocusGoal",
+      number: "14",
+      icon: "◎",
+      colors: ["#f4f8ff", "#d3ddff", "#536fc0"],
+      autoDate: true,
+      fields: [
+        {
+          key: "sport",
+          labelKey: "field.sportFocusGoal",
+          type: "text",
+          required: true,
+          className: "wide",
+          maxLength: 160,
+          placeholderKey: "field.sportFocusGoalPlaceholder",
+        },
+        notesField(),
+      ],
+    },
   ];
 
   const progressCard = {
@@ -428,9 +546,10 @@
   let cloudSyncInProgress = false;
   let previousDocumentTitle = document.title;
   let hungerOccurredAt = null;
-  let ratingTimer = null;
-  let ratingGeneration = 0;
-  let exerciseDesireSaveQueue = Promise.resolve();
+  const ratingControllers = Object.fromEntries(
+    RATING_KEYS.map((key) => [key, { timer: null, generation: 0, saveQueue: Promise.resolve() }]),
+  );
+  let ratingSaveQueue = Promise.resolve();
   const elements = {};
 
   document.addEventListener("DOMContentLoaded", init);
@@ -446,6 +565,7 @@
       categoryIcon: document.querySelector("#category-icon"),
       categoryKicker: document.querySelector("#category-kicker"),
       categoryChartPanel: document.querySelector("#category-chart-panel"),
+      categoryChartSummary: document.querySelector("#category-chart-summary"),
       categoryChart: document.querySelector("#category-chart"),
       allChartsGrid: document.querySelector("#all-charts-grid"),
       formPanel: document.querySelector("#entry-panel"),
@@ -468,12 +588,26 @@
       exerciseDesirePanel: document.querySelector("#exercise-desire-panel"),
       exerciseDesireScale: document.querySelector("#exercise-desire-scale"),
       exerciseDesireStatus: document.querySelector("#exercise-desire-status"),
+      exerciseDesireChartDetails: document.querySelector("#exercise-desire-chart-details"),
+      exerciseDesireChartSummary: document.querySelector("#exercise-desire-chart-summary"),
+      exerciseDesireChart: document.querySelector("#exercise-desire-chart"),
       exerciseDesireTable: document.querySelector("#exercise-desire-table"),
       desireDateFrom: document.querySelector("#desire-date-from"),
       desireDateTo: document.querySelector("#desire-date-to"),
       desireExportButton: document.querySelector("#desire-export-button"),
       desireClearRangeButton: document.querySelector("#desire-clear-range-button"),
       desireRangeError: document.querySelector("#desire-range-error"),
+      postExerciseFeelingScale: document.querySelector("#post-exercise-feeling-scale"),
+      postExerciseFeelingStatus: document.querySelector("#post-exercise-feeling-status"),
+      postExerciseFeelingChartDetails: document.querySelector("#post-exercise-feeling-chart-details"),
+      postExerciseFeelingChartSummary: document.querySelector("#post-exercise-feeling-chart-summary"),
+      postExerciseFeelingChart: document.querySelector("#post-exercise-feeling-chart"),
+      postExerciseFeelingTable: document.querySelector("#post-exercise-feeling-table"),
+      postFeelingDateFrom: document.querySelector("#post-feeling-date-from"),
+      postFeelingDateTo: document.querySelector("#post-feeling-date-to"),
+      postFeelingExportButton: document.querySelector("#post-feeling-export-button"),
+      postFeelingClearRangeButton: document.querySelector("#post-feeling-clear-range-button"),
+      postFeelingRangeError: document.querySelector("#post-feeling-range-error"),
       foodDesirePanel: document.querySelector("#food-desire-panel"),
       foodDesireSummary: document.querySelector("#food-desire-summary"),
       recordHungerButton: document.querySelector("#record-hunger-button"),
@@ -554,11 +688,17 @@
     elements.foodDesireForm.addEventListener("submit", handleFoodDesireSave);
     elements.foodDesireCancelButton.addEventListener("click", closeFoodDesireDialog);
     elements.foodDesireDialog.addEventListener("close", resetFoodDesireDialog);
-    elements.desireExportButton.addEventListener("click", exportExerciseDesireRange);
+    elements.desireExportButton.addEventListener("click", () => exportRatingRange("exerciseDesire"));
     elements.desireClearRangeButton.addEventListener("click", () => {
       elements.desireDateFrom.value = "";
       elements.desireDateTo.value = "";
       elements.desireRangeError.hidden = true;
+    });
+    elements.postFeelingExportButton.addEventListener("click", () => exportRatingRange("postExerciseFeeling"));
+    elements.postFeelingClearRangeButton.addEventListener("click", () => {
+      elements.postFeelingDateFrom.value = "";
+      elements.postFeelingDateTo.value = "";
+      elements.postFeelingRangeError.hidden = true;
     });
     elements.cloudButton.addEventListener("click", showCloudDialog);
     elements.miniCloudButton?.addEventListener("click", showCloudDialog);
@@ -575,7 +715,7 @@
 
   function freshState() {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       settings: { weightUnit: "lb", dailyWaterGoalL: 2, dailyCalorieGoalKcal: 2000 },
       pendingDeletes: [],
       records: Object.fromEntries(RECORD_KEYS.map((key) => [key, []])),
@@ -629,6 +769,7 @@
   }
 
   function renderAll() {
+    cancelRatingTimer();
     applyStaticTranslations();
     updateLanguageButtons();
     updateUnitButtons();
@@ -667,6 +808,10 @@
     document.querySelector("#category-view .category-nav")?.setAttribute("aria-label", currentLanguage === "zh-Hant" ? "項目導覽" : "Category navigation");
     document.querySelector("#progress-view .category-nav")?.setAttribute("aria-label", currentLanguage === "zh-Hant" ? "圖表導覽" : "Dashboard navigation");
     elements.exerciseDesireScale?.setAttribute("aria-label", currentLanguage === "zh-Hant" ? "運動意欲一至七分" : "Exercise desire from 1 to 7");
+    elements.postExerciseFeelingScale?.setAttribute(
+      "aria-label",
+      currentLanguage === "zh-Hant" ? "運動後感受一至七分" : "Post-exercise feeling from 1 to 7",
+    );
     elements.allChartsGrid?.setAttribute("aria-label", currentLanguage === "zh-Hant" ? "所有進度圖表" : "All progress dashboards");
     elements.printReport?.setAttribute("aria-label", currentLanguage === "zh-Hant" ? "可列印健康報告" : "Printable health report");
     elements.foodDesireDialog?.querySelector(".dialog-close")?.setAttribute("aria-label", t("aria.closeHunger"));
@@ -861,12 +1006,13 @@
     elements.formPanel.hidden = Boolean(config.custom);
     elements.recordsPanel.hidden = false;
     elements.foodDesirePanel.hidden = currentCategory !== "foodDesire";
-    elements.exerciseDesirePanel.hidden = currentCategory !== "cardio";
-    elements.categoryChartPanel.hidden = !CHART_KEYS.includes(currentCategory);
+    const isExerciseTracker = currentCategory === "cardio" || currentCategory === "strength";
+    elements.exerciseDesirePanel.hidden = !isExerciseTracker;
+    elements.categoryChartPanel.hidden = !["weight", "water", "cardio", "strength", "food"].includes(currentCategory);
     if (!config.custom) renderForm(editingId ? findCurrentRecord(editingId) : null);
     renderTable();
     renderCategoryChart();
-    if (currentCategory === "cardio") renderExerciseDesire();
+    if (isExerciseTracker) renderRatingSurveys();
     if (currentCategory === "foodDesire") renderFoodDesireSummary();
     updateUnitButtons();
     document.title = `${configTitle(currentCategory)} · ${t("app.name")}`;
@@ -935,6 +1081,7 @@
     input.required = Boolean(field.required);
     if (field.min !== undefined) input.min = String(field.min);
     if (field.step !== undefined) input.step = String(field.step);
+    if (field.maxLength !== undefined) input.maxLength = field.maxLength;
     if (field.placeholderKey) input.placeholder = t(field.placeholderKey);
     else if (field.placeholder) input.placeholder = field.placeholder;
     const rawValue = record?.[field.key];
@@ -1058,6 +1205,9 @@
         record[field.key] = field.unitValue ? convertActiveUnitToKg(parsed) : parsed;
       } else record[field.key] = value;
     }
+    if (config.autoDate) {
+      record.date = editingId ? findCurrentRecord(editingId)?.date || todayIso() : todayIso();
+    }
     if (!isValidIsoDate(record.date)) return { ok: false, error: t("validation.date"), fieldKey: "date" };
     if (currentCategory === "water" && number(record.litres) > 20) {
       return { ok: false, error: t("validation.waterHigh"), fieldKey: "litres" };
@@ -1171,6 +1321,23 @@
       return [
         date,
         { label: t("column.rating"), value: (record) => t("record.ratingValue", { value: formatInteger(record.rating) }), className: "table-number" },
+      ];
+    if (key === "postExerciseFeeling")
+      return [
+        date,
+        { label: t("column.postRating"), value: (record) => t("record.ratingValue", { value: formatInteger(record.rating) }), className: "table-number" },
+      ];
+    if (key === "foodPreference" || key === "foodCutGoal")
+      return [
+        { label: t("column.addedOn"), value: (record) => formatDate(record.date) },
+        { label: t(key === "foodPreference" ? "column.foodPreference" : "column.foodCutGoal"), value: (record) => record.item },
+        notes,
+      ];
+    if (key === "sportPreference" || key === "sportFocusGoal")
+      return [
+        { label: t("column.addedOn"), value: (record) => formatDate(record.date) },
+        { label: t(key === "sportPreference" ? "column.sportPreference" : "column.sportFocusGoal"), value: (record) => record.sport },
+        notes,
       ];
     return [date];
   }
@@ -1383,23 +1550,58 @@
   }
 
   function renderCategoryChart() {
-    if (!CHART_KEYS.includes(currentCategory)) {
+    if (!["weight", "water", "cardio", "strength", "food"].includes(currentCategory)) {
       elements.categoryChart.replaceChildren();
       return;
     }
+    configureDashboardDetails(
+      elements.categoryChartPanel,
+      elements.categoryChartSummary,
+      `category-${currentCategory}`,
+      t(`chart.${currentCategory}.title`),
+    );
     window.HealthCharts.renderLineChart(elements.categoryChart, chartModel(currentCategory));
   }
 
   function renderAllCharts() {
     elements.allChartsGrid.replaceChildren();
     CHART_KEYS.forEach((key) => {
-      const card = document.createElement("article");
-      card.className = `chart-panel chart-panel-${key}`;
+      const card = document.createElement("details");
+      card.className = `chart-panel collapsible-dashboard chart-panel-${key}`;
+      const summary = document.createElement("summary");
+      summary.className = "dashboard-summary";
       const chart = document.createElement("div");
       window.HealthCharts.renderLineChart(chart, chartModel(key));
-      card.append(chart);
+      card.append(summary, chart);
+      configureDashboardDetails(card, summary, `all-${key}`, t(`chart.${key}.title`));
       elements.allChartsGrid.append(card);
     });
+  }
+
+  function configureDashboardDetails(details, summary, id, title) {
+    if (!details || !summary) return;
+    const preferences = loadDashboardPreferences();
+    details.dataset.dashboardId = id;
+    details.open = preferences[id] !== false;
+    summary.textContent = t("chart.toggle", { title });
+    details.ontoggle = () => {
+      const nextPreferences = loadDashboardPreferences();
+      nextPreferences[id] = details.open;
+      try {
+        window.localStorage.setItem(DASHBOARD_STATE_KEY, JSON.stringify(nextPreferences));
+      } catch (error) {
+        console.warn("Could not save dashboard display preference.", error);
+      }
+    };
+  }
+
+  function loadDashboardPreferences() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(DASHBOARD_STATE_KEY));
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+      return {};
+    }
   }
 
   function aggregateDaily(records, valueSelector) {
@@ -1411,6 +1613,21 @@
     return [...totals.entries()].sort(([a], [b]) => a.localeCompare(b));
   }
 
+  function ratingDateData(records) {
+    const newestByDate = new Map();
+    records.forEach((record) => {
+      const rating = number(record.rating);
+      if (!isValidIsoDate(record.date) || !Number.isInteger(rating) || rating < 1 || rating > 7) return;
+      const current = newestByDate.get(record.date);
+      if (!current || timestamp(record.updatedAt || record.createdAt) >= timestamp(current.updatedAt || current.createdAt)) {
+        newestByDate.set(record.date, record);
+      }
+    });
+    return [...newestByDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, record]) => [date, number(record.rating)]);
+  }
+
   function aggregateChartData(key) {
     if (key === "weight") {
       return sortedChronological("weight").map((record) => [record.date, convertKgToActiveUnit(number(record.weightKg))]);
@@ -1418,6 +1635,7 @@
     if (key === "water") return aggregateDaily(state.records.water, (record) => record.litres);
     if (key === "cardio") return aggregateDaily(state.records.cardio, (record) => record.minutes);
     if (key === "strength") return aggregateDaily(state.records.strength, (record) => number(record.sets) * number(record.reps));
+    if (RATING_KEYS.includes(key)) return ratingDateData(state.records[key]);
     if (key === "food") {
       const grouped = new Map();
       state.records.food.forEach((record) => {
@@ -1455,9 +1673,13 @@
         if (key === "water") return formatLitres(value);
         if (key === "cardio") return formatMinutes(value);
         if (key === "food") return formatCalories(value);
+        if (RATING_KEYS.includes(key)) return t("record.ratingValue", { value: formatInteger(value) });
         return formatInteger(value);
       },
-      includeZero: key !== "weight",
+      includeZero: key !== "weight" && !RATING_KEYS.includes(key),
+      ...(RATING_KEYS.includes(key)
+        ? { domain: { minimum: 1, maximum: 7 }, tickValues: [1, 2, 3, 4, 5, 6, 7] }
+        : {}),
     };
     if (key === "food") {
       return {
@@ -1470,73 +1692,128 @@
         ],
       };
     }
-    const colors = { weight: "#246ec0", water: "#2295b6", cardio: "#606bd0", strength: "#8b5dad" };
+    const colors = {
+      weight: "#246ec0",
+      water: "#2295b6",
+      cardio: "#606bd0",
+      strength: "#8b5dad",
+      exerciseDesire: "#7652b7",
+      postExerciseFeeling: "#258b72",
+    };
     return {
       ...common,
       series: [{ name: t(`chart.series.${key}`), color: colors[key], values: data.map(([, value]) => value) }],
     };
   }
 
-  function renderExerciseDesire() {
-    const todayRecord = state.records.exerciseDesire.find((record) => record.date === todayIso());
-    elements.exerciseDesireScale.replaceChildren();
+  function ratingElements(key) {
+    if (key === "exerciseDesire") {
+      return {
+        scale: elements.exerciseDesireScale,
+        status: elements.exerciseDesireStatus,
+        table: elements.exerciseDesireTable,
+        chartDetails: elements.exerciseDesireChartDetails,
+        chartSummary: elements.exerciseDesireChartSummary,
+        chart: elements.exerciseDesireChart,
+        dateFrom: elements.desireDateFrom,
+        dateTo: elements.desireDateTo,
+        rangeError: elements.desireRangeError,
+        prefix: "desire",
+      };
+    }
+    return {
+      scale: elements.postExerciseFeelingScale,
+      status: elements.postExerciseFeelingStatus,
+      table: elements.postExerciseFeelingTable,
+      chartDetails: elements.postExerciseFeelingChartDetails,
+      chartSummary: elements.postExerciseFeelingChartSummary,
+      chart: elements.postExerciseFeelingChart,
+      dateFrom: elements.postFeelingDateFrom,
+      dateTo: elements.postFeelingDateTo,
+      rangeError: elements.postFeelingRangeError,
+      prefix: "postFeeling",
+    };
+  }
+
+  function renderRatingSurveys() {
+    RATING_KEYS.forEach(renderRatingSurvey);
+  }
+
+  function renderRatingSurvey(key) {
+    const ui = ratingElements(key);
+    const todayRecord = state.records[key].find((record) => record.date === todayIso());
+    ui.scale.replaceChildren();
     for (let rating = 1; rating <= 7; rating += 1) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "rating-button";
       button.textContent = String(rating);
-      button.setAttribute("aria-label", `${configTitle("exerciseDesire")} ${rating} / 7`);
+      button.setAttribute("aria-label", `${configTitle(key)} ${rating} / 7`);
       button.setAttribute("aria-pressed", String(number(todayRecord?.rating) === rating));
       if (number(todayRecord?.rating) === rating) button.classList.add("is-saved");
-      button.addEventListener("click", () => selectExerciseDesire(rating));
-      elements.exerciseDesireScale.append(button);
+      button.addEventListener("click", () => selectRating(key, rating));
+      ui.scale.append(button);
     }
-    elements.exerciseDesireStatus.textContent = todayRecord
-      ? t("desire.today", { value: formatInteger(todayRecord.rating) })
-      : t("desire.noneToday");
-    renderExerciseDesireTable();
+    ui.status.textContent = todayRecord
+      ? t(`${ui.prefix}.today`, { value: formatInteger(todayRecord.rating) })
+      : t(`${ui.prefix}.noneToday`);
+    renderRatingTable(key);
+    configureDashboardDetails(ui.chartDetails, ui.chartSummary, `survey-${key}`, t(`chart.${key}.title`));
+    window.HealthCharts.renderLineChart(ui.chart, chartModel(key));
   }
 
-  function selectExerciseDesire(rating) {
-    cancelRatingTimer();
-    ratingGeneration += 1;
-    const generation = ratingGeneration;
-    elements.exerciseDesireScale.querySelectorAll("button").forEach((button) => {
+  function selectRating(key, rating) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 7) return;
+    cancelRatingTimer(key);
+    const controller = ratingControllers[key];
+    controller.generation += 1;
+    const generation = controller.generation;
+    const ui = ratingElements(key);
+    ui.scale.querySelectorAll("button").forEach((button) => {
       button.classList.toggle("is-pending", number(button.textContent) === rating);
     });
-    elements.exerciseDesireStatus.textContent = t("desire.waiting", { value: rating });
-    ratingTimer = window.setTimeout(() => {
-      if (generation !== ratingGeneration) return;
-      const confirmed = window.confirm(t("desire.confirm", { value: rating }));
+    ui.status.textContent = t(`${ui.prefix}.waiting`, { value: rating });
+    controller.timer = window.setTimeout(() => {
+      if (generation !== controller.generation) return;
+      const confirmed = window.confirm(t(`${ui.prefix}.confirm`, { value: rating }));
       if (!confirmed) {
-        elements.exerciseDesireStatus.textContent = t("desire.cancelled");
-        renderExerciseDesire();
+        renderRatingSurvey(key);
+        ui.status.textContent = t(`${ui.prefix}.cancelled`);
         return;
       }
-      exerciseDesireSaveQueue = exerciseDesireSaveQueue.then(() => saveExerciseDesire(rating));
+      controller.saveQueue = controller.saveQueue.then(() => {
+        ratingSaveQueue = ratingSaveQueue.then(() => saveRating(key, rating));
+        return ratingSaveQueue;
+      });
     }, 2000);
   }
 
-  function cancelRatingTimer() {
-    if (ratingTimer) window.clearTimeout(ratingTimer);
-    ratingTimer = null;
+  function cancelRatingTimer(key = null) {
+    const keys = key ? [key] : RATING_KEYS;
+    keys.forEach((ratingKey) => {
+      const controller = ratingControllers[ratingKey];
+      if (controller.timer) window.clearTimeout(controller.timer);
+      controller.timer = null;
+      controller.generation += 1;
+    });
   }
 
-  async function saveExerciseDesire(rating) {
+  async function saveRating(key, rating) {
+    const ui = ratingElements(key);
     if (cloudSession && cloudSyncInProgress) {
       showToast(t("cloud.waitSave"));
-      renderExerciseDesire();
+      renderRatingSurvey(key);
       return;
     }
     const stateBeforeSave = JSON.stringify(state);
     const date = todayIso();
     const now = new Date().toISOString();
-    const records = state.records.exerciseDesire;
+    const records = state.records[key];
     const existingIndex = records.findIndex((record) => record.date === date);
     const existing = records[existingIndex];
     const savedRecord = {
       ...(existing || {}),
-      id: existing?.id || makeRecordId(configByKey.exerciseDesire, date),
+      id: existing?.id || makeRecordId(configByKey[key], date),
       date,
       rating,
       createdAt: existing?.createdAt || now,
@@ -1548,43 +1825,45 @@
     else records.push(savedRecord);
     if (!saveState()) {
       state = JSON.parse(stateBeforeSave);
-      renderExerciseDesire();
+      renderRatingSurvey(key);
       return;
     }
-    renderExerciseDesire();
-    showToast(t("desire.saved", { value: rating }));
-    await upsertRemote("exerciseDesire", savedRecord);
+    renderRatingSurveys();
+    showToast(t(`${ui.prefix}.saved`, { value: rating }));
+    await upsertRemote(key, savedRecord);
   }
 
-  function renderExerciseDesireTable() {
-    const records = sortedRecords("exerciseDesire");
-    elements.exerciseDesireTable.replaceChildren();
+  function renderRatingTable(key) {
+    const ui = ratingElements(key);
+    const records = sortedRecords(key);
+    ui.table.replaceChildren();
     if (!records.length) {
       const empty = document.createElement("div");
       empty.className = "empty-state compact-empty";
       empty.textContent = t("record.noRecords");
-      elements.exerciseDesireTable.append(empty);
+      ui.table.append(empty);
       return;
     }
-    elements.exerciseDesireTable.append(createSimpleTable(columnsFor("exerciseDesire"), records));
+    ui.table.append(createSimpleTable(columnsFor(key), records));
   }
 
-  function exportExerciseDesireRange() {
-    const from = elements.desireDateFrom.value;
-    const to = elements.desireDateTo.value;
-    elements.desireRangeError.hidden = true;
+  function exportRatingRange(key) {
+    const ui = ratingElements(key);
+    const from = ui.dateFrom.value;
+    const to = ui.dateTo.value;
+    ui.rangeError.hidden = true;
     if (from && to && from > to) {
-      elements.desireRangeError.textContent = t("desire.rangeInvalid");
-      elements.desireRangeError.hidden = false;
+      ui.rangeError.textContent = t("desire.rangeInvalid");
+      ui.rangeError.hidden = false;
       return;
     }
-    const records = filterDateRange(state.records.exerciseDesire, from, to);
+    const records = filterDateRange(state.records[key], from, to);
     if (!records.length) {
-      elements.desireRangeError.textContent = t("desire.rangeEmpty");
-      elements.desireRangeError.hidden = false;
+      ui.rangeError.textContent = t(`${ui.prefix}.rangeEmpty`);
+      ui.rangeError.hidden = false;
       return;
     }
-    printCategories(["exerciseDesire"], { from, to, recordsByKey: { exerciseDesire: records } });
+    printCategories([key], { from, to, recordsByKey: { [key]: records } });
   }
 
   function showFoodDesireDialog() {
@@ -1731,12 +2010,17 @@
     header.className = "print-report-header";
     const titleWrap = document.createElement("div");
     const title = document.createElement("h1");
-    title.textContent = keys[0] === "exerciseDesire" && keys.length === 1 ? t("report.desireTitle") : t("app.name");
+    const singleRatingKey = keys.length === 1 && RATING_KEYS.includes(keys[0]) ? keys[0] : null;
+    title.textContent = singleRatingKey
+      ? t(singleRatingKey === "exerciseDesire" ? "report.desireTitle" : "report.postFeelingTitle")
+      : t("app.name");
     const subtitle = document.createElement("p");
-    if (keys[0] === "exerciseDesire" && keys.length === 1) {
+    if (singleRatingKey) {
+      const rangeKey = singleRatingKey === "exerciseDesire" ? "report.range" : "report.postFeelingRange";
+      const allTimeKey = singleRatingKey === "exerciseDesire" ? "report.allTime" : "report.postFeelingAllTime";
       subtitle.textContent = options.from || options.to
-        ? t("report.range", { from: options.from ? formatDate(options.from) : "…", to: options.to ? formatDate(options.to) : "…" })
-        : t("report.allTime");
+        ? t(rangeKey, { from: options.from ? formatDate(options.from) : "…", to: options.to ? formatDate(options.to) : "…" })
+        : t(allTimeKey);
     } else subtitle.textContent = keys.length === 1 ? configTitle(keys[0]) : t("report.complete");
     titleWrap.append(title, subtitle);
     const meta = document.createElement("p");
@@ -2522,6 +2806,7 @@
 
   window.HealthTrackerTestHooks = Object.freeze({
     aggregateDaily,
+    ratingDateData,
     filterDateRange,
     localIsoDate,
   });

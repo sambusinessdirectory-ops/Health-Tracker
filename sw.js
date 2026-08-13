@@ -1,4 +1,4 @@
-const CACHE_NAME = "health-tracker-shell-v1";
+const CACHE_NAME = "health-tracker-shell-v2";
 const APP_SCOPE = self.registration.scope;
 const scopeUrl = new URL(APP_SCOPE);
 const SCOPE_PATH = scopeUrl.pathname.endsWith("/") ? scopeUrl.pathname : `${scopeUrl.pathname}/`;

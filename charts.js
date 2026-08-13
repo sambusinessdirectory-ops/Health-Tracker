@@ -107,7 +107,13 @@
     }
 
     const values = finiteValues(model.series);
-    const { minimum, maximum } = paddedDomain(values, model.includeZero !== false);
+    const calculatedDomain = paddedDomain(values, model.includeZero !== false);
+    const minimum = Number.isFinite(model.domain?.minimum)
+      ? model.domain.minimum
+      : calculatedDomain.minimum;
+    const maximum = Number.isFinite(model.domain?.maximum)
+      ? model.domain.maximum
+      : calculatedDomain.maximum;
     const chartWidth = Math.max(680, model.dates.length * 70 + 120);
     const chartHeight = 330;
     const margins = { top: 24, right: 30, bottom: 72, left: 76 };
@@ -137,8 +143,13 @@
     );
 
     const tickCount = 5;
-    for (let tick = 0; tick <= tickCount; tick += 1) {
-      const value = minimum + ((maximum - minimum) * tick) / tickCount;
+    const tickValues = Array.isArray(model.tickValues) && model.tickValues.length
+      ? model.tickValues.filter((value) => Number.isFinite(value))
+      : Array.from(
+          { length: tickCount + 1 },
+          (_, tick) => minimum + ((maximum - minimum) * tick) / tickCount,
+        );
+    for (const value of tickValues) {
       const yPosition = y(value);
       svg.append(
         svgElement("line", {

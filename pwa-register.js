@@ -1,5 +1,7 @@
 const serviceWorkerUrl = new URL("./sw.js", import.meta.url);
 let deferredInstallPrompt = null;
+const hadServiceWorkerController = Boolean(navigator.serviceWorker?.controller);
+let reloadingForUpdate = false;
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
@@ -12,6 +14,11 @@ window.addEventListener("appinstalled", () => {
 });
 
 if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadServiceWorkerController || reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    window.location.reload();
+  });
   window.addEventListener("load", async () => {
     try {
       const registration = await navigator.serviceWorker.register(serviceWorkerUrl);
